@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporting questions and commands</title>
+<style>
+:root{
+  color-scheme: light;
+  --paper:#F6F8F7; --card:#FFFFFF; --ink:#1C2632; --muted:#5C6977; --line:#D3DAE1; --soft:#EDF1F0;
+  --lime:#A9C83B; --lime-ink:#43680F; --lime-bg:#F1F7DD;
+  --i:#5B3FA8; --i-bg:#EEE9FA;
+  --q:#1D5FC2; --q-bg:#E4EEFC;
+  --s:#A04C00; --s-bg:#FDEBD6;
+  --v:#A4185A; --v-bg:#FAE3EF;
+  --t:#08695D; --t-bg:#DBF2EE;
+  --z:#3F6A0E; --z-bg:#EAF3D6;
+  --g:#97A1AC; --g-bg:#EEF0F2;
+  --sans:"Avenir Next","Avenir","Segoe UI","Helvetica Neue",system-ui,sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --scale:1;
+}
+*{box-sizing:border-box}
+html{font-size:calc(var(--scale) * clamp(17px, .85vw + .6vh, 30px))}
+body{margin:0;height:100vh;height:100dvh;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr);background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
+q{quotes:"“" "”" "‘" "’"}
+em{font-style:italic}
+
+/* Header */
+.top{background:var(--card);border-bottom:1px solid var(--line)}
+.top::before{content:"";display:block;height:.35rem;background:var(--lime)}
+.topin{display:flex;align-items:center;gap:1.5rem;padding:.4rem clamp(16px,3vw,48px)}
+.tt{font-weight:600;font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt b{color:var(--lime-ink)}
+#prog{display:flex;gap:1rem;margin-left:auto;overflow-x:auto;padding:.15rem;min-width:0}
+.grp{display:flex;flex-direction:column;gap:.2rem}
+.gl{font-size:.62rem;color:var(--muted);font-weight:600;white-space:nowrap}
+.segs{display:flex;gap:.25rem}
+.seg{width:1.6rem;height:.55rem;border-radius:.3rem;border:0;background:var(--line);cursor:pointer;padding:0;transition:background-color .3s}
+.seg.seen{background:#C3D58A}
+.seg.cur{background:var(--lime-ink)}
+.seg:focus-visible{outline:3px solid var(--q);outline-offset:2px}
+
+/* Slides */
+main{position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:1.5rem clamp(16px,4vw,72px) 2.5rem;display:none}
+.slide.cur{display:block;animation:enter .35s ease-out}
+@keyframes enter{from{opacity:0;transform:translateX(1.2rem)}to{opacity:1;transform:none}}
+.wrap{max-width:76rem;margin:0 auto}
+h1,h2,h3{margin:0;line-height:1.12;letter-spacing:-.01em}
+h2{font-size:2.1rem;font-weight:700;margin-bottom:.35rem}
+h3{font-size:1.15rem;font-weight:700}
+.lead{font-size:1.15rem;color:var(--muted);margin:.2rem 0 1.1rem;max-width:46em}
+
+/* Word tiles */
+.w{display:inline-flex;align-items:center;padding:.22em .55em .26em;border-radius:.45em;background:var(--card);border:2px solid var(--line);border-bottom-width:.2em;font-weight:600;font-size:1.5rem;line-height:1.15;color:var(--ink);white-space:nowrap;transition:background-color .45s,color .45s,border-color .45s}
+.w .tx{display:inline-block}
+.w.r-i{background:var(--i-bg);border-color:var(--i);color:var(--i)}
+.w.r-q{background:var(--q-bg);border-color:var(--q);color:var(--q)}
+.w.r-s{background:var(--s-bg);border-color:var(--s);color:var(--s)}
+.w.r-v{background:var(--v-bg);border-color:var(--v);color:var(--v)}
+.w.r-t{background:var(--t-bg);border-color:var(--t);color:var(--t)}
+.w.r-z{background:var(--z-bg);border-color:var(--z);color:var(--z)}
+.w.r-p{background:transparent;border-color:transparent;padding-inline:.08em;font-size:1.75rem}
+.w.r-g{background:var(--g-bg);border-color:var(--g);border-style:dashed;color:var(--g);text-decoration:line-through;text-decoration-thickness:.12em}
+.w.sm{font-size:1.02rem;border-width:1.5px;border-bottom-width:.2em}
+
+/* Highlights in running text */
+.m{font-weight:700;border-radius:.2em;padding:0 .12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.m-i{color:var(--i);background:var(--i-bg)}
+.m-q{color:var(--q);background:var(--q-bg)}
+.m-s{color:var(--s);background:var(--s-bg)}
+.m-v{color:var(--v);background:var(--v-bg)}
+.m-t{color:var(--t);background:var(--t-bg)}
+.m-z{color:var(--z);background:var(--z-bg)}
+.m-x{font-weight:inherit;background:none;padding:0}
+.it.on .m-x{text-decoration:line-through;text-decoration-color:var(--v);text-decoration-thickness:.12em;color:var(--muted)}
+
+/* Reveal */
+.rv{opacity:0;visibility:hidden;transform:translateY(.6rem);transition:opacity .45s,transform .45s,visibility 0s .45s}
+.rv.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s,transform .45s,visibility 0s}
+tr.rv{transform:none}
+
+/* Speech bubble */
+.bubble{position:relative;display:inline-block;margin:0 0 .9rem;background:var(--card);border:2px solid var(--ink);border-radius:1.1rem;padding:.5rem 1.1rem .65rem;max-width:42em}
+.bubble::after{content:"";position:absolute;left:1.6rem;bottom:-.58rem;width:1rem;height:1rem;background:var(--card);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg)}
+.bubble figcaption{font-weight:700;font-size:.85rem;color:var(--muted)}
+.bubble blockquote{margin:0;font-family:var(--serif);font-style:italic;font-size:1.55rem;line-height:1.3}
+.src{font-size:.78rem;color:var(--muted);font-weight:600}
+
+/* Start */
+.hero{padding-top:1rem}
+.station{font-weight:600;color:var(--lime-ink);margin:0 0 .8rem}
+.hero h1{font-size:2.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:.35em .3em;margin-bottom:2rem}
+.hero h1 .w{font-size:1em;font-weight:700;transform:rotate(var(--r,0deg));animation:drop .7s cubic-bezier(.2,.9,.3,1.25) both;animation-delay:calc(var(--d,0) * 110ms + 150ms)}
+.hero h1 .and{font-weight:600;color:var(--muted);font-size:.7em;animation:fade .6s both .5s}
+@keyframes drop{from{opacity:0;transform:translateY(-1.4em) rotate(calc(var(--r,0deg) * -4))}to{opacity:1;transform:rotate(var(--r,0deg))}}
+@keyframes fade{from{opacity:0}}
+.teaser{display:grid;gap:.3rem;justify-items:start}
+.reported{margin-top:.6rem}
+.reported .lbl{display:block;font-size:.85rem;color:var(--muted);font-weight:600}
+.reported p{margin:.1rem 0 0;font-size:1.5rem;font-weight:500;max-width:34em}
+.ask{font-size:1.2rem;font-weight:600;margin:1.6rem 0 0}
+.agenda{list-style:none;counter-reset:a;display:flex;flex-wrap:wrap;gap:.6rem 1.8rem;padding:0;margin:1rem 0 0}
+.agenda li{counter-increment:a;display:flex;gap:.55rem;align-items:center;font-weight:600;font-size:1.1rem}
+.agenda li::before{content:counter(a);display:grid;place-items:center;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--lime);color:var(--ink);font-size:.9rem;font-weight:700}
+
+/* Backshift timeline */
+.say-row{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.tl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:3.6rem 5.2rem auto;margin:.3rem 0 1rem;background:var(--card);border:1px solid var(--line);border-radius:.9rem;overflow:hidden}
+.zone{grid-row:1/3;padding:.6rem .8rem 0;text-align:center;border-left:2px dashed var(--line);transition:background-color .5s}
+.zone:first-child{border-left:0}
+.zone[data-z="0"]{grid-column:1}
+.zone[data-z="1"]{grid-column:2}
+.zone[data-z="2"]{grid-column:3}
+.zone b{display:block;font-size:1.05rem}
+.zone span{display:block;font-size:.8rem;color:var(--muted)}
+.zone.lit{background:var(--v-bg)}
+.track{grid-column:1/-1;grid-row:2;position:relative;z-index:1}
+.chip{--x:2.5;position:absolute;top:.6rem;left:calc(var(--x) * 100% / 3);transform:translate(-50%,0);transition:left .95s cubic-bezier(.5,0,.25,1);display:flex;flex-direction:column;align-items:center;padding:.2em .8em .28em;font-weight:700;font-size:1.6rem;line-height:1.1;background:var(--card);color:var(--v);border:2px solid var(--v);border-bottom-width:.2em;border-radius:.5em;white-space:nowrap}
+.chip.nt{transition:none}
+.chip .tx{display:inline-block}
+.chip .tn{display:inline-block;font-size:.44em;font-weight:600;color:var(--muted);margin-top:.25em}
+.axis{grid-column:1/-1;grid-row:3;position:relative;margin:.3rem 1.2rem .8rem 1.8rem;border-top:3px solid var(--ink);display:flex;justify-content:space-between;padding-top:.3rem;font-size:.8rem;color:var(--muted);font-weight:600}
+.axis::before{content:"";position:absolute;left:-.95rem;top:calc(-.5rem - 1.5px);border-top:.5rem solid transparent;border-bottom:.5rem solid transparent;border-right:.8rem solid var(--ink)}
+.axis .mid{position:absolute;left:50%;transform:translateX(-50%);color:var(--ink);white-space:nowrap}
+.bs-rep{font-size:1.5rem;font-weight:500;min-height:1.6em;margin:0 0 1rem;opacity:0;transform:translateY(.5rem);transition:opacity .4s,transform .4s}
+.bs-rep.on{opacity:1;transform:none;transition-delay:.8s}
+.bs-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:1.5rem;align-items:start}
+.bs-hist{display:flex;flex-wrap:wrap;gap:.45rem .9rem;align-items:center;transition:opacity .4s}
+.bs-hist.empty{opacity:0}
+.bs-hist .lbl{font-size:.85rem;font-weight:600;color:var(--muted)}
+.pair{display:inline-flex;align-items:center;gap:.3rem}
+.arr{color:var(--muted);font-weight:700}
+.bs-foot .merke{margin-top:0}
+
+/* Scenes with word tiles */
+.split{display:grid;grid-template-columns:minmax(0,1fr) 20rem;gap:2.2rem;align-items:start}
+.scene{padding:.7rem 0 .8rem;border-bottom:1px solid var(--line);transition:opacity .45s}
+.scene:first-child{padding-top:.2rem}
+.scene:last-child{border-bottom:0}
+.scene.off{visibility:hidden;opacity:0}
+.scene.dim{opacity:.4}
+.orig{margin:0 0 .5rem;font-family:var(--serif);font-style:italic;font-size:1.2rem;color:var(--muted)}
+.orig .who{font-family:var(--sans);font-style:normal;font-weight:700;color:var(--ink);margin-right:.3em}
+.orig small{font-family:var(--sans);font-style:normal;font-size:.75rem;font-weight:600;margin-left:.5em}
+.tiles{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;min-height:3.1rem}
+.tiles .w{font-size:1.38rem}
+.tiles .w.r-p{font-size:1.6rem}
+.glue{display:inline-flex;align-items:center;gap:.05rem}
+.cap{margin:.45rem 0 0;font-size:1.1rem;min-height:1.6em}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:.8rem;padding:1rem 1.1rem;position:sticky;top:0}
+.howto h3{margin-bottom:.6rem}
+.howto .merke{margin-top:1rem;background:var(--paper)}
+.howto .w.sm{font-size:.95rem}
+.howto .plus{font-size:1rem}
+.rules{list-style:none;margin:0;padding:0;counter-reset:r;display:grid;gap:.3rem}
+.rules li{counter-increment:r;position:relative;padding:.32rem .5rem .32rem 2.6rem;border-radius:.5rem;font-size:1.02rem;transition:opacity .5s,filter .5s,background-color .35s,box-shadow .35s}
+.rules li::before{content:counter(r);position:absolute;left:.5rem;top:.5rem;display:grid;place-items:center;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--ink);color:#fff;font-size:.8rem;font-weight:700}
+.rules li.lock{opacity:.2;filter:blur(3px)}
+.rules li.now{background:var(--lime-bg);box-shadow:inset .25rem 0 0 var(--lime)}
+
+/* Remember boxes and patterns */
+.merke{background:var(--card);border-left:.4rem solid var(--lime);border-radius:0 .7rem .7rem 0;padding:.75rem 1.1rem;margin-top:1.1rem}
+.merke > b:first-child{display:block;color:var(--lime-ink);font-size:.9rem;margin-bottom:.15rem}
+.merke p{margin:.2rem 0}
+.formula{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-top:.35rem}
+.plus{color:var(--muted);font-weight:700;font-size:1.15rem}
+.note{font-size:1rem;color:var(--muted);margin:.8rem 0 0}
+.note em{color:var(--ink)}
+
+/* Backshift at a glance */
+.cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:2.5rem;align-items:start}
+.ptab{border-collapse:separate;border-spacing:0 .35rem;margin-top:.7rem}
+.ptab td{padding:0 .35rem;vertical-align:middle}
+.ptab td.tn{padding-left:0;padding-right:.8rem;font-size:.8rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.hint{font-size:.9rem;color:var(--muted);margin:.25rem 0 .8rem}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.card{position:relative;height:3.8rem;border:0;padding:0;background:none;font:inherit;color:inherit;cursor:pointer;perspective:700px}
+.card:focus-visible{outline:3px solid var(--q);outline-offset:3px;border-radius:.6rem}
+.card .face{position:absolute;inset:0;display:grid;place-content:center;text-align:center;border-radius:.6rem;backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:transform .6s cubic-bezier(.4,.1,.2,1);font-weight:600;font-size:1.25rem;line-height:1.1}
+.card .front{background:var(--card);border:2px solid var(--line);border-bottom-width:.2em}
+.card .back{background:var(--z-bg);color:var(--z);border:2px solid var(--z);border-bottom-width:.2em;transform:rotateY(180deg)}
+.card .back small{display:block;font-size:.7rem;color:var(--muted);font-weight:600}
+.card.on .front{transform:rotateY(-180deg)}
+.card.on .back{transform:rotateY(0)}
+
+/* Exercises */
+.ex-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.task{font-size:1.15rem;margin:.3rem 0 .35rem;max-width:52em}
+.tip{font-size:.95rem;color:var(--muted);margin:0 0 1rem}
+.legend{display:inline-flex;gap:.35rem;flex-wrap:wrap;margin-left:.8rem;vertical-align:middle}
+.legend .m{font-size:.85rem}
+.ex-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem 2rem}
+.it{display:grid;align-content:start;grid-template-columns:1.9rem minmax(0,1fr);gap:.15rem .7rem;padding:.6rem .8rem .7rem;border-radius:.7rem;cursor:pointer;background:var(--card);border:1px solid var(--line);transition:border-color .3s}
+.it:hover{border-color:#AEB9C4}
+.it:focus-visible{outline:3px solid var(--q);outline-offset:2px}
+.it .n{grid-row:1/3;display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--soft);font-weight:700;font-size:.9rem;transition:background-color .3s}
+.it.on .n{background:var(--lime)}
+.it .q{font-size:1.12rem}
+.it .q .who{font-weight:700;margin-right:.2em}
+.it .q q{font-family:var(--serif);font-style:italic;font-size:1.06em}
+.it .a{display:grid;font-size:1.12rem;margin-top:.2rem}
+.it .a > *{grid-area:1/1}
+.it .line{align-self:end;border-bottom:2px dotted #B7C2CC;height:1.5em;transition:opacity .3s}
+.it .sol{clip-path:inset(0 100% 0 0);opacity:0;transition:clip-path .8s cubic-bezier(.4,0,.2,1),opacity .2s}
+.it.on .sol{clip-path:inset(0);opacity:1}
+.it.on .line{opacity:0}
+.it .sol .note{display:block;font-size:.85rem;margin:.15rem 0 0;font-weight:600}
+
+/* Overview */
+.ov{width:100%;border-collapse:collapse;margin-top:.8rem}
+.ov th,.ov td{text-align:left;padding:.8rem .7rem;border-bottom:1px solid var(--line);vertical-align:middle}
+.ov thead th{font-size:.85rem;color:var(--muted);font-weight:600}
+.ov tbody th{font-size:1.15rem;width:15%}
+.ov td.ex{font-size:1.05rem}
+.ov td.ex q{font-family:var(--serif);font-style:italic}
+.ov .formula{margin:0}
+
+/* Footer */
+.bar{display:flex;align-items:center;gap:.6rem;padding:.45rem clamp(16px,3vw,48px);background:var(--card);border-top:1px solid var(--line)}
+.pos{display:flex;gap:1rem;font-size:.85rem;color:var(--muted);margin-right:auto;margin-left:.6rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tools{display:flex;gap:.3rem}
+.btn{font:600 .9rem var(--sans);padding:.5em 1em;border-radius:.55em;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#AEB9C4}
+.btn:focus-visible{outline:3px solid var(--q);outline-offset:2px}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff;min-width:9.5em}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--soft)}
+kbd{font:600 .75rem var(--sans);border:1px solid var(--line);border-bottom-width:2px;border-radius:.3em;padding:0 .35em;background:var(--card)}
+
+@media (max-width: 900px){
+  .split,.cols,.bs-foot,.ex-list{grid-template-columns:minmax(0,1fr)}
+  .tools{display:none}
+  .btn.primary{min-width:0}
+  #stepNo{display:none}
+  .ov thead{display:none}
+  .ov tr{display:grid}
+  .ov th,.ov td{border:0;padding:.3rem 0}
+  .ov tr{border-bottom:1px solid var(--line);padding:.5rem 0}
+  .howto{position:static}
+  .tt,.gl,.pos kbd,.pos .keys{display:none}
+  .hero h1{font-size:2.1rem}
+  .w{font-size:1.2rem}
+  .chip{font-size:1.2rem}
+  .zone span{display:none}
+  .axis .mid{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition-duration:0s !important;transition-delay:0s !important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="topin">
+    <span class="tt"><b>Station 3</b> &nbsp;Reporting questions, commands and requests</span>
+    <nav id="prog" aria-label="Slides"></nav>
+  </div>
+</header>
+
+<main id="deck">
+
+<!-- 1 Start -->
+<section class="slide" data-part="Start" data-title="Start" data-kind="beats" data-cfg="start">
+  <div class="wrap hero">
+    <p class="station">Station 3: The lawyer’s daughter</p>
+    <h1>
+      <span class="w" style="--d:0;--r:-1.5deg">Reporting</span>
+      <span class="w r-q" style="--d:1;--r:1deg">questions,</span>
+      <span class="w r-t" style="--d:2;--r:-.5deg">commands</span>
+      <span class="and">and</span>
+      <span class="w r-t" style="--d:3;--r:1.5deg">requests</span>
+    </h1>
+    <div class="teaser">
+      <figure class="bubble"><figcaption>Zoe</figcaption><blockquote>“Is she at the hospital? When can we go see her?”</blockquote></figure>
+      <span class="src">p. 28, l. 11–12</span>
+      <div class="reported rv" data-show="rep">
+        <span class="lbl">Later, Zoe tells the story:</span>
+        <p class="mk">I asked my dad {q:if} {s:she} {v:was} at the hospital and {q:when} {s:we} {v:could} go see her.</p>
+      </div>
+    </div>
+    <p class="ask rv" data-show="ask">What is different from the speech bubble? Today we look at it step by step.</p>
+    <ol class="agenda rv" data-show="agenda">
+      <li>Review: backshift</li>
+      <li>Reporting questions</li>
+      <li>Reporting commands and requests</li>
+      <li>Putting it all together</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 2 Backshift timeline -->
+<section class="slide" data-part="Review" data-title="Backshift" data-kind="bs">
+  <div class="wrap">
+    <h2>Backshift: one step back</h2>
+    <p class="lead">Julia tells her class what Zoe and her dad said. Look at the verb.</p>
+    <div class="say-row">
+      <figure class="bubble bs-say"><figcaption class="who"></figcaption><blockquote class="say"></blockquote></figure>
+      <span class="src bs-src"></span>
+    </div>
+    <div class="tl" aria-hidden="true">
+      <div class="zone" data-z="0"><b>past perfect</b><span>had + past participle</span></div>
+      <div class="zone" data-z="1"><b>past</b><span>was, worked, was working, could, would</span></div>
+      <div class="zone" data-z="2"><b>present</b><span>am, works, is working, can, will</span></div>
+      <div class="track"><span class="chip"><span class="tx"></span><span class="tn"></span></span></div>
+      <div class="axis"><span>earlier</span><span class="mid">Backshift: one step to the left</span><span>now</span></div>
+    </div>
+    <p class="bs-rep"></p>
+    <div class="bs-foot">
+      <div class="bs-hist empty"><span class="lbl">So far:</span><span class="pairs"></span></div>
+      <div class="merke rv" data-show="bsrule"><b>Remember</b><p>If the reporting verb is in the past (<em>said, told, asked</em>), the verb goes <strong>one step back</strong> into the past. Change the people and the words for time and place, too.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 Backshift at a glance -->
+<section class="slide" data-part="Review" data-title="Backshift at a glance" data-kind="items" data-unit="Card">
+  <div class="wrap">
+    <div class="ex-head"><h2>Backshift at a glance</h2><button class="btn all" data-a="Turn all cards" data-b="Turn cards back">Turn all cards</button></div>
+    <div class="cols">
+      <div>
+        <div class="merke" style="margin-top:.6rem"><b>Remember</b><p>If the reporting verb is in the past, the verb goes <strong>one step back</strong>.</p></div>
+        <table class="ptab">
+          <tr><td class="tn">simple present</td><td><span class="w sm">am / is</span></td><td class="arr">→</td><td><span class="w sm r-v">was</span></td><td class="tn">simple past</td></tr>
+          <tr><td class="tn"></td><td><span class="w sm">work / works</span></td><td class="arr">→</td><td><span class="w sm r-v">worked</span></td><td class="tn"></td></tr>
+          <tr><td class="tn">present progressive</td><td><span class="w sm">is working</span></td><td class="arr">→</td><td><span class="w sm r-v">was working</span></td><td class="tn">past progressive</td></tr>
+          <tr><td class="tn">present perfect</td><td><span class="w sm">has / have worked</span></td><td class="arr">→</td><td><span class="w sm r-v">had worked</span></td><td class="tn">past perfect</td></tr>
+          <tr><td class="tn">simple past</td><td><span class="w sm">worked</span></td><td class="arr">→</td><td><span class="w sm r-v">had worked</span></td><td class="tn">past perfect</td></tr>
+          <tr><td class="tn">will-future</td><td><span class="w sm">will</span></td><td class="arr">→</td><td><span class="w sm r-v">would</span></td><td class="tn"></td></tr>
+          <tr><td class="tn">modal verbs</td><td><span class="w sm">can</span></td><td class="arr">→</td><td><span class="w sm r-v">could</span></td><td class="tn"></td></tr>
+          <tr><td class="tn"></td><td><span class="w sm">must</span></td><td class="arr">→</td><td><span class="w sm r-v">had to</span></td><td class="tn"></td></tr>
+        </table>
+        <p class="note">No change: <em>could, would, should, might</em> and <em>had</em> + past participle.</p>
+        <p class="note">Change the people: <span class="m m-s">I → he / she</span> <span class="m m-s">my → his / her</span> <span class="m m-s">we → they</span></p>
+      </div>
+      <div>
+        <h3>Time and place: what do they become?</h3>
+        <p class="hint">Guess first, then turn the card (click or Next).</p>
+        <div class="cards">
+          <button class="card it"><span class="face front">now</span><span class="face back"><small>now</small>then</span></button>
+          <button class="card it"><span class="face front">today</span><span class="face back"><small>today</small>that day</span></button>
+          <button class="card it"><span class="face front">yesterday</span><span class="face back"><small>yesterday</small>the day before</span></button>
+          <button class="card it"><span class="face front">tomorrow</span><span class="face back"><small>tomorrow</small>the next day</span></button>
+          <button class="card it"><span class="face front">next week</span><span class="face back"><small>next week</small>the following week</span></button>
+          <button class="card it"><span class="face front">two years ago</span><span class="face back"><small>two years ago</small>two years before</span></button>
+          <button class="card it"><span class="face front">here</span><span class="face back"><small>here</small>there</span></button>
+          <button class="card it"><span class="face front">this</span><span class="face back"><small>this</small>that</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 Exercise 1 -->
+<section class="slide" data-part="Review" data-title="Exercise 1" data-kind="items">
+  <div class="wrap">
+    <div class="ex-head"><h2>Exercise 1: What did Zoe say?</h2><button class="btn all" data-a="Show all answers" data-b="Hide answers">Show all answers</button></div>
+    <p class="task">Julia tells her class about the interview. Report what Zoe said. Start like this: <em>Zoe said that …</em></p>
+    <p class="tip">Write the sentences in your exercise book. Think of backshift, people and time words.
+      <span class="legend"><span class="m m-v">verb</span><span class="m m-s">person</span><span class="m m-z">time / place</span></span></p>
+    <ol class="ex-list" data-ex="ex1"></ol>
+  </div>
+</section>
+
+<!-- 5 Questions with question words -->
+<section class="slide" data-part="Questions" data-title="Questions with question words" data-kind="beats" data-cfg="wh">
+  <div class="wrap">
+    <h2>Questions with question words</h2>
+    <p class="lead">Julia asks a lot of questions. How do we report later what she asked?</p>
+    <div class="split">
+      <div>
+        <div class="scenes"></div>
+        <p class="note rv mk" data-show="subjq">Careful: if the question word is the subject, the word order stays the same. <q>What has happened?</q> → <em>I asked him {q:what} {v:had happened}.</em> (p. 28, l. 8–9)</p>
+      </div>
+      <aside class="howto">
+        <h3>How it works</h3>
+        <ol class="rules">
+          <li>Start: <em>asked</em> or <em>wanted to know</em> (+ person)</li>
+          <li>The question word stays at the front.</li>
+          <li><em>do / does / did</em> disappears.</li>
+          <li>Subject before verb, like in a statement.</li>
+          <li>Backshift. Change people and time words.</li>
+          <li>Full stop, no question mark.</li>
+        </ol>
+        <div class="merke rv" data-show="formula"><b>Pattern</b>
+          <div class="formula"><span class="w sm r-i">asked (+ person)</span><span class="plus">+</span><span class="w sm r-q">question word</span><span class="plus">+</span><span class="w sm r-s">subject</span><span class="plus">+</span><span class="w sm r-v">verb …</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 6 Yes/no questions -->
+<section class="slide" data-part="Questions" data-title="Yes/no questions" data-kind="beats" data-cfg="yn">
+  <div class="wrap">
+    <h2>Yes/no questions: if or whether</h2>
+    <p class="lead">Some questions have no question word. The answer would be just “yes” or “no”.</p>
+    <div class="split">
+      <div class="scenes"></div>
+      <aside class="howto">
+        <h3>How it works</h3>
+        <ol class="rules">
+          <li>Start: <em>asked</em> or <em>wanted to know</em> (+ person)</li>
+          <li>No question word? Use <em>if</em> or <em>whether</em>.</li>
+          <li><em>do / does / did</em> disappears.</li>
+          <li>Subject before verb.</li>
+          <li>Backshift. Change the people.</li>
+          <li>Full stop, no question mark.</li>
+        </ol>
+        <div class="merke rv" data-show="formula"><b>Pattern</b>
+          <div class="formula"><span class="w sm r-i">asked (+ person)</span><span class="plus">+</span><span class="w sm r-q">if / whether</span><span class="plus">+</span><span class="w sm r-s">subject</span><span class="plus">+</span><span class="w sm r-v">verb …</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 7 Exercise 2 -->
+<section class="slide" data-part="Questions" data-title="Exercise 2" data-kind="items">
+  <div class="wrap">
+    <div class="ex-head"><h2>Exercise 2: Questions at the museum</h2><button class="btn all" data-a="Show all answers" data-b="Hide answers">Show all answers</button></div>
+    <p class="task">Visitors at the 9/11 Memorial &amp; Museum ask the guide, Ms Rivera, lots of questions. Report them. Start like this: <em>A visitor asked Ms Rivera …</em></p>
+    <p class="tip">Question word or <em>if</em>? You can also use <em>whether</em> instead of <em>if</em>.
+      <span class="legend"><span class="m m-q">question word / if</span><span class="m m-s">subject / person</span><span class="m m-v">verb</span><span class="m m-z">time / place</span></span></p>
+    <ol class="ex-list" data-ex="ex2"></ol>
+  </div>
+</section>
+
+<!-- 8 Find the mistake -->
+<section class="slide" data-part="Questions" data-title="Find the mistake" data-kind="items">
+  <div class="wrap">
+    <div class="ex-head"><h2>Find the mistake</h2><button class="btn all" data-a="Show all answers" data-b="Hide answers">Show all answers</button></div>
+    <p class="task">Each sentence has one mistake. Find it and write the correct sentence.</p>
+    <p class="tip">There is exactly one mistake in each sentence.</p>
+    <ol class="ex-list" data-ex="det"></ol>
+  </div>
+</section>
+
+<!-- 9 Commands and requests -->
+<section class="slide" data-part="Commands" data-title="Commands and requests" data-kind="beats" data-cfg="cmd">
+  <div class="wrap">
+    <h2>Commands and requests</h2>
+    <p class="lead">Someone should do something, or not do it. This is how we report it.</p>
+    <div class="split">
+      <div class="scenes"></div>
+      <aside class="howto">
+        <h3>How it works</h3>
+        <ol class="rules">
+          <li><em>told</em> (command) or <em>asked</em> (request) + person</li>
+          <li><em>to</em> + infinitive</li>
+          <li>No backshift.</li>
+          <li>Change the people.</li>
+          <li>Negative: <em>not to</em> + infinitive</li>
+          <li><em>please</em> disappears.</li>
+        </ol>
+        <div class="merke rv" data-show="formula"><b>Pattern</b>
+          <div class="formula"><span class="w sm r-i">told / asked + person</span><span class="plus">+</span><span class="w sm r-t">(not) to</span><span class="plus">+</span><span class="w sm r-v">infinitive …</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 10 Exercise 3 -->
+<section class="slide" data-part="Commands" data-title="Exercise 3" data-kind="items">
+  <div class="wrap">
+    <div class="ex-head"><h2>Exercise 3: Before the trip</h2><button class="btn all" data-a="Show all answers" data-b="Hide answers">Show all answers</button></div>
+    <p class="task">Before the class trip to the museum, Mr Brooks gives his students lots of instructions. Report them with <em>told</em> or <em>asked</em>. Start like this: <em>Mr Brooks told the students …</em></p>
+    <p class="tip">A request (<em>please</em>) → <em>asked</em>. A command → <em>told</em>.
+      <span class="legend"><span class="m m-i">reporting verb</span><span class="m m-t">(not) to</span><span class="m m-s">person</span></span></p>
+    <ol class="ex-list" data-ex="ex3"></ol>
+  </div>
+</section>
+
+<!-- 11 Overview -->
+<section class="slide" data-part="Wrap-up" data-title="Everything at a glance" data-kind="beats" data-cfg="ov">
+  <div class="wrap">
+    <h2>Everything at a glance</h2>
+    <table class="ov">
+      <thead><tr><th>What?</th><th>Pattern</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr class="rv" data-show="o1"><th>Statement</th>
+          <td><div class="formula"><span class="w sm r-i">said (that)</span><span class="plus">+</span><span class="w sm r-v">backshift</span></div></td>
+          <td class="ex mk"><q>I am nine.</q> → She said that {s:she} {v:was} nine.</td></tr>
+        <tr class="rv" data-show="o2"><th>Question with a question word</th>
+          <td><div class="formula"><span class="w sm r-i">asked</span><span class="plus">+</span><span class="w sm r-q">question word</span><span class="plus">+</span><span class="w sm r-s">subject</span><span class="plus">+</span><span class="w sm r-v">verb</span></div></td>
+          <td class="ex mk"><q>Where is the museum?</q> → Julia asked {q:where} {s:the museum} {v:was}.</td></tr>
+        <tr class="rv" data-show="o3"><th>Yes/no question</th>
+          <td><div class="formula"><span class="w sm r-i">asked</span><span class="plus">+</span><span class="w sm r-q">if / whether</span><span class="plus">+</span><span class="w sm r-s">subject</span><span class="plus">+</span><span class="w sm r-v">verb</span></div></td>
+          <td class="ex mk"><q>Can we go back?</q> → Zoe asked {q:if} {s:they} {v:could} go back.</td></tr>
+        <tr class="rv" data-show="o4"><th>Command, request</th>
+          <td><div class="formula"><span class="w sm r-i">told / asked + person</span><span class="plus">+</span><span class="w sm r-t">(not) to</span><span class="plus">+</span><span class="w sm r-v">infinitive</span></div></td>
+          <td class="ex mk"><q>Don’t worry.</q> → They told me {t:not to} {v:worry}.</td></tr>
+      </tbody>
+    </table>
+    <div class="merke rv" data-show="o5"><b>Remember</b><p>Statements and questions need backshift. Commands and requests just use <em>(not) to</em> + infinitive.</p></div>
+  </div>
+</section>
+
+<!-- 12 Mixed exercise -->
+<section class="slide" data-part="Wrap-up" data-title="Mix it up" data-kind="items">
+  <div class="wrap">
+    <div class="ex-head"><h2>Mix it up: Julia and Andrew</h2><button class="btn all" data-a="Show all answers" data-b="Hide answers">Show all answers</button></div>
+    <p class="task">Andrew wants to visit New York and talks to Julia. Report what they said. Is it a statement, a question or a command?</p>
+    <p class="tip">First decide: statement, question or command? Then use the right pattern.
+      <span class="legend"><span class="m m-q">question word / if</span><span class="m m-s">person</span><span class="m m-v">verb</span><span class="m m-t">(not) to</span><span class="m m-z">time / place</span></span></p>
+    <ol class="ex-list" data-ex="mix"></ol>
+  </div>
+</section>
+
+</main>
+
+<footer class="bar">
+  <button class="btn" id="prev">Back</button>
+  <div class="pos"><span id="slideNo"></span><span id="stepNo"></span><span class="keys"><kbd>←</kbd> <kbd>→</kbd> or space bar</span></div>
+  <div class="tools">
+    <button class="btn ghost" id="reset" title="Start this slide again (R)">Restart slide</button>
+    <button class="btn ghost" id="smaller" aria-label="Smaller text" title="Smaller text (-)">A−</button>
+    <button class="btn ghost" id="bigger" aria-label="Larger text" title="Larger text (+)">A+</button>
+    <button class="btn ghost" id="fs" title="Full screen (F)">Full screen</button>
+  </div>
+  <button class="btn primary" id="next">Next</button>
+</footer>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Content ---------- */
+
+// Backshift examples. from/to = [position, verb, tense]
+// Positions on the timeline (in zone widths): 0.5 past perfect, 1.5 past, 2.5 present.
+// Perfect tenses sit on the border: 2 = present perfect (links past and present), 1 = past perfect.
+const BS = [
+  { who: 'Zoe', say: '{s:I} {v:am} a huge sports fan.', src: 'p. 28, l. 25',
+    from: [2.5, 'am', 'simple present'], to: [1.5, 'was', 'simple past'],
+    rep: 'Zoe {i:said} that {s:she} {v:was} a huge sports fan.' },
+  { who: 'Zoe', say: '{s:I} {v:am looking} for something to make {s:me} feel normal again.', src: 'based on p. 28, l. 26–27',
+    from: [2.5, 'am looking', 'present progressive'], to: [1.5, 'was looking', 'past progressive'],
+    rep: 'Zoe {i:said} that {s:she} {v:was looking} for something to make {s:her} feel normal again.' },
+  { who: 'Zoe’s dad', say: 'There {v:has been} an attack.', src: 'p. 28, l. 9–10',
+    from: [2, 'has been', 'present perfect'], to: [1, 'had been', 'past perfect'],
+    rep: 'Her dad {i:said} that there {v:had been} an attack.' },
+  { who: 'Zoe', say: '{s:We} {v:have taken} group trips to the zoo.', src: 'based on p. 28, l. 44',
+    from: [2, 'have taken', 'present perfect'], to: [1, 'had taken', 'past perfect'],
+    rep: 'Zoe {i:said} that {s:they} {v:had taken} group trips to the zoo.' },
+  { who: 'Zoe', say: '{s:I} {v:will} never forget that day.', src: '',
+    from: [2.5, 'will', 'will-future'], to: [1.5, 'would', 'would + infinitive'],
+    rep: 'Zoe {i:said} that {s:she} {v:would} never forget that day.' },
+  { who: 'Zoe', say: '{s:I} {v:can’t} tell {s:you}.', src: 'p. 28, l. 34',
+    from: [2.5, 'can’t', 'modal verb'], to: [1.5, 'couldn’t', 'modal verb'],
+    rep: 'Zoe {i:said} that {s:she} {v:couldn’t} tell {s:Julia}.' },
+  { who: 'Zoe’s dad', say: 'Mom {v:was} there.', src: 'p. 28, l. 10',
+    from: [1.5, 'was', 'simple past'], to: [0.5, 'had been', 'past perfect'],
+    rep: 'He {i:said} that Mom {v:had been} there.' }
+];
+
+// Scenes: t = word tiles {id: [text, role]}, s = states (o = order, set = changes, r = rule, hop = jumps over)
+const CFG = {
+  start: { after: ['rep', 'ask', 'agenda'] },
+  ov: { after: ['o1', 'o2', 'o3', 'o4', 'o5'] },
+  wh: {
+    scenes: [
+      { id: 'w1', start0: true, who: 'Julia', say: 'Where is the museum?', src: 'p. 29, ex. 4b',
+        t: { in: ['Julia asked Andrew', 'i'], w: ['Where', 'q'], is: ['is', 'v'], m: ['the museum', 's'], qm: ['?', 'p'] },
+        s: [
+          { o: 'w is m qm', cap: 'Julia asks Andrew. How do we report this?' },
+          { o: 'in w is m qm', set: { w: ['where', 'q'] }, cap: 'Start: <b>asked</b> + person', r: [0] },
+          { pulse: 'w', cap: 'The question word stays at the front.', r: [1] },
+          { o: 'in w m is qm', hop: 'is', cap: 'Like in a statement: first the <b>subject</b>, then the <b>verb</b>.', r: [3] },
+          { set: { is: ['was', 'v'] }, cap: 'Backshift: is → was', r: [4] },
+          { set: { qm: ['.', 'p'] }, cap: 'Full stop, no question mark. Done!', r: [5] }
+        ] },
+      { id: 'w2', who: 'Julia', say: 'When did you come home that day?', src: 'p. 29, ex. 2a',
+        t: { in: ['Julia asked Zoe', 'i'], w: ['When', 'q'], did: ['did', 'v'], you: ['you', 's'], come: ['come', 'v'], h: ['home', 'n'], td: ['that day', 'n'], qm: ['?', 'p'] },
+        s: [
+          { o: 'w did you come h td qm', cap: 'Now with <b>did</b>. What happens to it?' },
+          { o: 'in w did you come h td qm', set: { w: ['when', 'q'] }, cap: 'Start: <b>asked</b> + person', r: [0] },
+          { set: { did: ['did', 'g'] }, cap: '<b>did</b> disappears …', r: [2] },
+          { o: 'in w you come h td qm', cap: '… but the past stays. It moves into the verb.', r: [2] },
+          { set: { you: ['she', 's'] }, cap: 'Change the person: you → she', r: [4] },
+          { set: { come: ['had come', 'v'] }, cap: 'Backshift: did come (= came) → had come', r: [4] },
+          { set: { qm: ['.', 'p'] }, cap: 'Full stop, no question mark. Done!', r: [5] }
+        ] }
+    ],
+    after: ['formula', 'subjq']
+  },
+  yn: {
+    scenes: [
+      { id: 'y1', start0: true, who: 'Julia', say: 'Do you often think of your mother?', src: 'p. 29, ex. 2a',
+        t: { in: ['Julia wanted to know', 'i'], if: ['if', 'q'], do: ['Do', 'v'], you: ['you', 's'], of: ['often', 'n'], th: ['think', 'v'], o: ['of', 'n'], ym: ['your mother', 's'], qm: ['?', 'p'] },
+        s: [
+          { o: 'do you of th o ym qm', cap: 'A question without a question word.' },
+          { o: 'in do you of th o ym qm', cap: 'Start: <b>wanted to know</b>', r: [0] },
+          { o: 'in if do you of th o ym qm', cap: 'No question word? Then use <b>if</b> (or <b>whether</b>).', r: [1] },
+          { set: { do: ['Do', 'g'] }, cap: '<b>Do</b> disappears.', r: [2] },
+          { o: 'in if you of th o ym qm', cap: '<b>Do</b> disappears.', r: [2] },
+          { set: { you: ['Zoe', 's'], ym: ['her mother', 's'] }, cap: 'Change the people: you → Zoe, your → her', r: [4] },
+          { set: { th: ['thought', 'v'] }, cap: 'Backshift: think → thought', r: [4] },
+          { set: { qm: ['.', 'p'] }, cap: 'Full stop, no question mark. Done!', r: [5] }
+        ] },
+      { id: 'y2', who: 'Zoe', say: 'Can we go back?', src: 'p. 28, l. 47–48',
+        t: { in: ['Zoe asked her dad', 'i'], if: ['if', 'q'], can: ['Can', 'v'], we: ['we', 's'], go: ['go', 'n'], b: ['back', 'n'], qm: ['?', 'p'] },
+        s: [
+          { o: 'can we go b qm', cap: 'Zoe after the first trip to the zoo.' },
+          { o: 'in can we go b qm', cap: 'Start: <b>asked</b> + person', r: [0] },
+          { o: 'in if can we go b qm', cap: 'No question word? Then <b>if</b>.', r: [1] },
+          { o: 'in if we can go b qm', set: { can: ['can', 'v'] }, hop: 'can', cap: 'Subject before verb: <b>we can</b>', r: [3] },
+          { set: { we: ['they', 's'] }, cap: 'Change the person: we → they', r: [4] },
+          { set: { can: ['could', 'v'] }, cap: 'Backshift: can → could', r: [4] },
+          { set: { qm: ['.', 'p'] }, cap: 'Full stop, no question mark. Done!', r: [5] }
+        ] }
+    ],
+    after: ['formula']
+  },
+  cmd: {
+    scenes: [
+      { id: 'c1', start0: true, who: 'The school', say: 'Pick up your children.', src: 'p. 28, l. 3–4',
+        t: { in: ['The school asked parents', 'i'], to: ['to', 't'], pu: ['Pick up', 'v'], yc: ['your children', 's'], dot: ['.', 'p'] },
+        s: [
+          { o: 'pu yc dot', cap: 'A command: someone should do something.' },
+          { o: 'in pu yc dot', set: { pu: ['pick up', 'v'] }, cap: 'Start: <b>asked</b> + person. Who should do something?', r: [0] },
+          { o: 'in to pu yc dot', cap: '<b>to</b> + infinitive', r: [1] },
+          { set: { yc: ['their children', 's'] }, cap: 'Change the people: your → their', r: [3] },
+          { pulse: 'pu', cap: 'No backshift! <b>pick up</b> stays <b>pick up</b>.', r: [2] }
+        ] },
+      { id: 'c2', who: 'The teachers', say: 'Don’t worry about homework.', src: 'p. 28, l. 20–21',
+        t: { in: ['They told me', 'i'], dont: ['Don’t', 'v'], w: ['worry', 'v'], ab: ['about homework', 'n'], dot: ['.', 'p'] },
+        s: [
+          { o: 'dont w ab dot', cap: 'This time it is negative.' },
+          { o: 'in dont w ab dot', cap: 'Start: <b>told</b> + person', r: [0] },
+          { set: { dont: ['not to', 't'] }, cap: 'Negative: Don’t → <b>not to</b>', r: [4] },
+          { pulse: 'w', cap: 'No backshift: <b>worry</b> stays <b>worry</b>.', r: [2] }
+        ] },
+      { id: 'c3', who: 'Julia', say: 'Please send me the link to their website.', src: 'p. 29, ex. 4b',
+        t: { in: ['Julia asked Andrew', 'i'], pl: ['Please', 'n'], to: ['to', 't'], se: ['send', 'v'], me: ['me', 's'], li: ['the link', 'n'], lw: ['to their website', 'n'], dot: ['.', 'p'] },
+        s: [
+          { o: 'pl se me li lw dot', cap: 'A polite request.' },
+          { o: 'in pl se me li lw dot', cap: 'A request: <b>asked</b> + person', r: [0] },
+          { set: { pl: ['Please', 'g'] }, cap: '<b>please</b> disappears. The request is already in <b>asked</b>.', r: [5] },
+          { o: 'in se me li lw dot', cap: '<b>please</b> disappears. The request is already in <b>asked</b>.', r: [5] },
+          { o: 'in to se me li lw dot', cap: '<b>to</b> + infinitive', r: [1] },
+          { set: { me: ['her', 's'] }, cap: 'Change the person: me → her', r: [3] }
+        ] }
+    ],
+    after: ['formula']
+  }
+};
+
+// Exercises: who, q (direct speech), a (answer), note
+const EX = {
+  ex1: [
+    { who: 'Zoe', q: 'I was nine years old at the time.', a: 'Zoe said that {s:she} {v:had been} nine years old at the time.' },
+    { who: 'Zoe', q: 'My family likes to keep it private.', a: 'Zoe said that {s:her} family {v:liked} to keep it private.' },
+    { who: 'Zoe', q: 'My sister is studying in Boston now.', a: 'Zoe said that {s:her} sister {v:was studying} in Boston {z:then}.' },
+    { who: 'Zoe', q: 'I have met many people with similar experiences.', a: 'Zoe said that {s:she} {v:had} met many people with similar experiences.' },
+    { who: 'Zoe', q: 'We will go to the zoo again next week.', a: 'Zoe said that {s:they} {v:would} go to the zoo again {z:the following week}.', note: 'also correct: the next week' },
+    { who: 'Zoe', q: 'I can show you some photos tomorrow.', a: 'Zoe said that {s:she} {v:could} show {s:Julia} some photos {z:the next day}.', note: 'also correct: show her, the following day' },
+    { who: 'Zoe', q: 'I wrote a letter to my favorite team.', a: 'Zoe said that {s:she} {v:had written} a letter to {s:her} favorite team.' },
+    { who: 'Zoe', q: 'I come here every September.', a: 'Zoe said that {s:she} {v:came} {z:there} every September.' }
+  ],
+  ex2: [
+    { who: 'A visitor', q: 'When does the museum open?', a: 'A visitor asked Ms Rivera {q:when} {s:the museum} {v:opened}.' },
+    { who: 'A girl', q: 'Can we take photos inside?', a: 'A girl asked Ms Rivera {q:if} {s:they} {v:could} take photos inside.' },
+    { who: 'A man', q: 'Where is the café?', a: 'A man asked Ms Rivera {q:where} {s:the café} {v:was}.' },
+    { who: 'A boy', q: 'Did you work here in 2001?', a: 'A boy asked Ms Rivera {q:if} {s:she} {v:had worked} {z:there} in 2001.' },
+    { who: 'A woman', q: 'How long does the tour take?', a: 'A woman asked Ms Rivera {q:how long} {s:the tour} {v:took}.' },
+    { who: 'A girl', q: 'Are you from New York?', a: 'A girl asked Ms Rivera {q:if} {s:she} {v:was} from New York.' },
+    { who: 'A boy', q: 'What happened to the towers?', a: 'A boy asked Ms Rivera {q:what} {v:had happened} to the towers.', note: 'what is the subject here, so the word order stays the same.' },
+    { who: 'A visitor', q: 'Will the museum be open tomorrow?', a: 'A visitor asked Ms Rivera {q:if} {s:the museum} {v:would} be open {z:the next day}.' }
+  ],
+  det: [
+    { q: 'Andrew asked Julia where {x:did she live}.', a: 'Andrew asked Julia where {s:she} {v:lived}.', note: 'No did in a reported question.' },
+    { q: 'Julia wanted to know when {x:had Zoe} come home.', a: 'Julia wanted to know when {s:Zoe} {v:had} come home.', note: 'Subject before verb.' },
+    { q: 'A boy asked if he {x:can} buy a ticket online.', a: 'A boy asked if he {v:could} buy a ticket online.', note: 'Backshift: can → could.' },
+    { q: 'The guide asked us {x:do we have} any questions.', a: 'The guide asked us {q:if} {s:we} {v:had} any questions.', note: 'Yes/no question: if + subject + verb.' },
+    { q: 'Zoe’s aunt asked who {x:was it}.', a: 'Zoe’s aunt asked who {s:it} {v:was}.', note: 'Subject before verb (p. 28, l. 36).' },
+    { q: 'The teacher told us {x:don’t} talk in the museum.', a: 'The teacher told us {t:not to} talk in the museum.', note: 'Negative: not to + infinitive.' }
+  ],
+  ex3: [
+    { who: 'Mr Brooks', q: 'Bring your tickets.', a: 'Mr Brooks {i:told the students} {t:to} bring {s:their} tickets.' },
+    { who: 'Mr Brooks', q: 'Don’t be late.', a: 'Mr Brooks {i:told the students} {t:not to} be late.' },
+    { who: 'Mr Brooks', q: 'Please switch off your phones.', a: 'Mr Brooks {i:asked the students} {t:to} switch off {s:their} phones.' },
+    { who: 'Mr Brooks', q: 'Don’t touch the exhibits.', a: 'Mr Brooks {i:told the students} {t:not to} touch the exhibits.' },
+    { who: 'Mr Brooks', q: 'Please write down three questions.', a: 'Mr Brooks {i:asked the students} {t:to} write down three questions.' },
+    { who: 'Mr Brooks', q: 'Stay with your group.', a: 'Mr Brooks {i:told the students} {t:to} stay with {s:their} group.' },
+    { who: 'Mr Brooks', q: 'Don’t eat in the exhibition rooms.', a: 'Mr Brooks {i:told the students} {t:not to} eat in the exhibition rooms.' },
+    { who: 'Ben', q: 'Mr Brooks, please wait for me!', a: 'Ben {i:asked Mr Brooks} {t:to} wait for {s:him}.' }
+  ],
+  mix: [
+    { who: 'Andrew', q: 'I’m going to New York next summer.', a: 'Andrew said that {s:he} {v:was} going to New York {z:the following summer}.', note: 'statement' },
+    { who: 'Julia', q: 'Have you ever been there?', a: 'Julia asked Andrew {q:if} {s:he} {v:had} ever been there.', note: 'yes/no question' },
+    { who: 'Andrew', q: 'What should I visit?', a: 'Andrew asked Julia {q:what} {s:he} {v:should} visit.', note: 'question with a question word (should stays should)' },
+    { who: 'Julia', q: 'Go to the 9/11 Memorial first.', a: 'Julia told Andrew {t:to} go to the 9/11 Memorial first.', note: 'command' },
+    { who: 'Julia', q: 'Don’t go there on a weekend.', a: 'Julia told Andrew {t:not to} go there on a weekend.', note: 'command' },
+    { who: 'Andrew', q: 'Why is it so busy on weekends?', a: 'Andrew asked {q:why} {s:it} {v:was} so busy on weekends.', note: 'question with a question word' },
+    { who: 'Julia', q: 'Please send me a photo.', a: 'Julia asked Andrew {t:to} send {s:her} a photo.', note: 'request' },
+    { who: 'Andrew', q: 'I will bring you a souvenir.', a: 'Andrew said that {s:he} {v:would} bring {s:her} a souvenir.', note: 'statement' }
+  ]
+};
+
+/* ---------- Helpers ---------- */
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const mk = s => s.replace(/\{(\w):([^}]*)\}/g, '<span class="m m-$1">$2</span>');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let instant = false;
+const still = () => instant || reduce;
+function quiet(fn) { instant = true; try { fn(); } finally { instant = false; } }
+function reveal(el) { if (el && !instant) el.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+
+/* ---------- Scene: word tiles that rebuild a sentence ---------- */
+
+function makeScene(def) {
+  const el = document.createElement('div');
+  el.className = 'scene off';
+  el.innerHTML = `<p class="orig"><span class="who">${def.who}:</span> <q>${def.say}</q><small>${def.src || ''}</small></p><div class="tiles"></div><p class="cap"></p>`;
+  const tilesEl = $('.tiles', el), capEl = $('.cap', el);
+  let tok = { ...def.t }, order = [];
+  const snaps = def.s.map(st => {
+    if (st.set) tok = { ...tok, ...st.set };
+    if (st.o) order = st.o.split(' ');
+    const list = x => (x || '').split(' ').filter(Boolean);
+    return { order, tok, cap: st.cap || '', pulse: list(st.pulse), hop: list(st.hop) };
+  });
+  let cur = -1;
+
+  function render(j) {
+    if (j === cur) return;
+    const first = cur === -1;
+    cur = j;
+    const snap = snaps[j];
+    $$('.out', tilesEl).forEach(x => x.remove());
+    const old = new Map($$('.w:not(.out)', tilesEl).map(e => [e.dataset.id, e]));
+    const rects = new Map([...old].map(([id, e]) => [id, e.getBoundingClientRect()]));
+    const box = tilesEl.getBoundingClientRect();
+    const keep = new Set(snap.order);
+
+    old.forEach((e, id) => {
+      if (keep.has(id)) return;
+      if (still() || first) { e.remove(); return; }
+      const r = rects.get(id);
+      e.classList.add('out');
+      Object.assign(e.style, { position: 'absolute', left: (r.left - box.left) + 'px', top: (r.top - box.top) + 'px', margin: 0 });
+      e.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(1.6em) rotate(-12deg)' }],
+        { duration: 650, easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' }).onfinish = () => e.remove();
+      setTimeout(() => e.remove(), 800);
+    });
+
+    $$('.glue', tilesEl).forEach(g => g.replaceWith(...g.childNodes));
+    let prevEl = null;
+    const live = snap.order.map(id => {
+      const [text, role] = snap.tok[id];
+      let e = old.get(id), fresh = false;
+      if (!e) {
+        e = document.createElement('span');
+        e.dataset.id = id;
+        e.innerHTML = '<span class="tx"></span>';
+        fresh = true;
+      }
+      const changed = !fresh && e.dataset.text !== text;
+      e.dataset.text = text;
+      e.firstChild.textContent = text;
+      e.className = 'w r-' + (role || 'n');
+      if (role === 'p' && prevEl) {
+        // keep punctuation on the same line as the word before it
+        const g = document.createElement('span');
+        g.className = 'glue';
+        tilesEl.insertBefore(g, prevEl);
+        g.append(prevEl, e);
+        prevEl = g;
+      } else { tilesEl.appendChild(e); prevEl = e; }
+      return { e, id, fresh, changed };
+    });
+    capEl.innerHTML = snap.cap;
+
+    if (still() || first) return;
+    capEl.animate([{ opacity: 0, transform: 'translateY(.3em)' }, { opacity: 1, transform: 'none' }], { duration: 350, easing: 'ease-out' });
+
+    live.forEach(({ e, id, fresh, changed }) => {
+      if (fresh) {
+        e.animate([{ opacity: 0, transform: 'translateY(-1.2em) scale(.8)' }, { opacity: 1, transform: 'none' }],
+          { duration: 550, easing: 'cubic-bezier(.2,.9,.3,1.25)' });
+        return;
+      }
+      const f = rects.get(id), l = e.getBoundingClientRect();
+      const dx = f.left - l.left, dy = f.top - l.top;
+      if (Math.abs(dx) > .5 || Math.abs(dy) > .5) {
+        if (snap.hop.includes(id)) {
+          const lift = parseFloat(getComputedStyle(e).fontSize) * 1.6;
+          e.animate([
+            { transform: `translate(${dx}px,${dy}px)` },
+            { transform: `translate(${dx / 2}px,${dy / 2 - lift}px) rotate(6deg)`, offset: .5 },
+            { transform: 'none' }
+          ], { duration: 900, easing: 'ease-in-out' });
+        } else {
+          e.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }],
+            { duration: 700, easing: 'cubic-bezier(.3,.7,.2,1)' });
+        }
+      }
+      if (changed) {
+        e.firstChild.animate([{ transform: 'rotateX(90deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, easing: 'ease-out' });
+        e.animate([{ boxShadow: '0 0 0 .4em rgba(169,200,59,.8)' }, { boxShadow: '0 0 0 0 rgba(169,200,59,0)' }], { duration: 1200, easing: 'ease-out' });
+      }
+    });
+    snap.pulse.forEach(id => {
+      const hit = live.find(x => x.id === id);
+      if (hit) hit.e.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 650, iterations: 2, easing: 'ease-in-out' });
+    });
+  }
+  function reset() { tilesEl.innerHTML = ''; capEl.innerHTML = ''; cur = -1; }
+  return { el, def, render, reset, get cur() { return cur; } };
+}
+
+/* ---------- Slide types ---------- */
+
+// Slide with steps (scenes and reveals)
+function beatsSlide(el, cfg) {
+  const host = $('.scenes', el);
+  const scenes = (cfg.scenes || []).map(def => { const s = makeScene(def); host.appendChild(s.el); return s; });
+  const rules = $$('.rules li', el);
+  const shows = $$('[data-show]', el);
+  const beats = [];
+  (cfg.scenes || []).forEach(def => def.s.forEach((st, j) => {
+    if (j === 0) { if (!def.start0) beats.push({ sc: def.id, st: 0 }); }
+    else beats.push({ sc: def.id, st: j, r: st.r || [] });
+  }));
+  (cfg.after || []).forEach(name => beats.push({ show: name }));
+  let k = 0;
+
+  function render() {
+    const done = beats.slice(0, k);
+    const last = done[done.length - 1];
+    scenes.forEach(s => {
+      let st = s.def.start0 ? 0 : null;
+      done.forEach(b => { if (b.sc === s.def.id) st = b.st; });
+      if (st === null) { if (s.cur !== -1) s.reset(); s.el.classList.add('off'); }
+      else { s.el.classList.remove('off'); s.render(st); }
+      s.el.classList.toggle('dim', !!(last && last.sc && last.sc !== s.def.id && st !== null));
+    });
+    const seen = new Set(), now = new Set(last && last.r || []);
+    done.forEach(b => (b.r || []).forEach(r => seen.add(r)));
+    rules.forEach((li, i) => { li.classList.toggle('lock', !seen.has(i)); li.classList.toggle('now', now.has(i)); });
+    const shown = new Set(done.map(b => b.show).filter(Boolean));
+    shows.forEach(x => x.classList.toggle('on', shown.has(x.dataset.show)));
+    if (last) reveal(last.sc ? scenes.find(s => s.def.id === last.sc).el : shows.find(x => x.dataset.show === last.show));
+  }
+  quiet(render);
+  return {
+    unit: 'Step', get k() { return k; }, get max() { return beats.length; },
+    next() { if (k < beats.length) { k++; render(); return true; } return false; },
+    prev() { if (k > 0) { k--; render(); return true; } return false; },
+    reset() { k = 0; scenes.forEach(s => s.reset()); render(); },
+    end() { k = beats.length; render(); },
+    jump(n) { k = Math.max(0, Math.min(beats.length, n)); render(); }
+  };
+}
+
+// Slide with the backshift timeline
+function bsSlide(el) {
+  const bubble = $('.bs-say', el), who = $('.who', el), say = $('.say', el), src = $('.bs-src', el);
+  const rep = $('.bs-rep', el), chip = $('.chip', el), chipTx = $('.chip .tx', el), chipTn = $('.chip .tn', el);
+  const hist = $('.bs-hist', el), pairs = $('.pairs', el), zones = $$('.zone', el), shows = $$('[data-show]', el);
+  const beats = [];
+  BS.forEach((e, i) => { if (i) beats.push({ ex: i, st: 0 }); beats.push({ ex: i, st: 1 }); });
+  beats.push({ show: 'bsrule' });
+  let k = 0, curEx = -1, curSt = -1, timer = null;
+
+  // a chip on a border (perfect tenses) lights both zones next to it
+  const litZones = x => Number.isInteger(x) ? [x - 1, x] : [Math.floor(x)];
+
+  function place([x, text, tense], move) {
+    clearTimeout(timer);
+    zones.forEach(zn => zn.classList.toggle('lit', litZones(x).includes(+zn.dataset.z)));
+    if (!move || still()) {
+      chip.classList.add('nt');
+      chip.style.setProperty('--x', x);
+      chipTx.textContent = text;
+      chipTn.textContent = tense;
+      void chip.offsetWidth;
+      chip.classList.remove('nt');
+      return;
+    }
+    chip.style.setProperty('--x', x);
+    chip.animate([
+      { transform: 'translate(-50%,0)' },
+      { transform: 'translate(-50%,-1.3em) rotate(-5deg)', offset: .45 },
+      { transform: 'translate(-50%,0)' }
+    ], { duration: 950, easing: 'ease-in-out' });
+    timer = setTimeout(() => {
+      chipTx.textContent = text;
+      chipTn.textContent = tense;
+      chipTx.animate([{ transform: 'rotateX(90deg)' }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
+    }, 430);
+  }
+
+  function render() {
+    const done = beats.slice(0, k);
+    let ex = 0, st = 0;
+    done.forEach(b => { if (b.ex !== undefined) { ex = b.ex; st = b.st; } });
+    const e = BS[ex];
+    if (ex !== curEx) {
+      who.textContent = e.who;
+      say.innerHTML = '“' + mk(e.say) + '”';
+      src.textContent = e.src;
+      rep.innerHTML = mk(e.rep);
+      if (!still() && curEx !== -1) bubble.animate([{ opacity: 0, transform: 'translateY(-.5em)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' });
+      place(st ? e.to : e.from, false);
+    } else if (st !== curSt) {
+      place(st ? e.to : e.from, true);
+    }
+    curEx = ex; curSt = st;
+    rep.classList.toggle('on', st === 1);
+    const fin = BS.filter((_, i) => done.some(b => b.ex === i && b.st === 1));
+    pairs.innerHTML = fin.map(x => `<span class="pair"><span class="w sm">${x.from[1]}</span><span class="arr">→</span><span class="w sm r-v">${x.to[1]}</span></span>`).join(' ');
+    hist.classList.toggle('empty', !fin.length);
+    const shown = new Set(done.map(b => b.show).filter(Boolean));
+    shows.forEach(x => x.classList.toggle('on', shown.has(x.dataset.show)));
+    if (shown.size) reveal(shows[0]);
+  }
+  quiet(render);
+  return {
+    unit: 'Step', get k() { return k; }, get max() { return beats.length; },
+    next() { if (k < beats.length) { k++; render(); return true; } return false; },
+    prev() { if (k > 0) { k--; render(); return true; } return false; },
+    reset() { k = 0; render(); },
+    end() { k = beats.length; render(); },
+    jump(n) { k = Math.max(0, Math.min(beats.length, n)); render(); }
+  };
+}
+
+// Exercise slide: reveal answers one by one
+function buildList(ol) {
+  ol.innerHTML = EX[ol.dataset.ex].map((d, i) => `
+    <li class="it" tabindex="0" role="button" aria-expanded="false">
+      <span class="n">${i + 1}</span>
+      <div class="q">${d.who ? `<span class="who">${d.who}:</span> <q>${mk(d.q)}</q>` : mk(d.q)}</div>
+      <div class="a"><span class="line"></span><span class="sol">${mk(d.a)}${d.note ? `<span class="note">${d.note}</span>` : ''}</span></div>
+    </li>`).join('');
+}
+function itemsSlide(el) {
+  $$('.ex-list', el).forEach(buildList);
+  const items = $$('.it', el), all = $('.all', el);
+  const isOn = i => i.classList.contains('on');
+  function set(i, on) { i.classList.toggle('on', on); i.setAttribute('aria-expanded', on); }
+  function upd() { if (all) all.textContent = items.every(isOn) ? all.dataset.b : all.dataset.a; ui(); }
+  items.forEach(i => {
+    i.addEventListener('click', ev => { set(i, !isOn(i)); upd(); if (ev.detail) i.blur(); });
+    i.addEventListener('keydown', ev => {
+      if (i.tagName === 'BUTTON') return;
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); set(i, !isOn(i)); upd(); }
+    });
+  });
+  if (all) all.addEventListener('click', ev => { const show = !items.every(isOn); items.forEach(i => set(i, show)); upd(); if (ev.detail) all.blur(); });
+  return {
+    unit: el.dataset.unit || 'Answer',
+    get k() { return items.filter(isOn).length; }, get max() { return items.length; },
+    next() { const h = items.find(i => !isOn(i)); if (!h) return false; set(h, true); upd(); reveal(h); return true; },
+    prev() { const s = items.filter(isOn).pop(); if (!s) return false; set(s, false); upd(); return true; },
+    reset() { items.forEach(i => set(i, false)); upd(); },
+    end() { items.forEach(i => set(i, true)); upd(); },
+    jump(n) { items.forEach((i, x) => set(i, x < n)); upd(); }
+  };
+}
+
+/* ---------- Deck ---------- */
+
+$$('.mk').forEach(x => { x.innerHTML = mk(x.innerHTML); });
+
+let cur = -1;
+const slides = $$('.slide').map(el => {
+  const kind = el.dataset.kind;
+  const c = kind === 'bs' ? bsSlide(el) : kind === 'items' ? itemsSlide(el) : beatsSlide(el, CFG[el.dataset.cfg] || {});
+  return Object.assign(c, { el, part: el.dataset.part, title: el.dataset.title, visited: false });
+});
+
+// Progress bar
+const prog = $('#prog'), groups = [];
+slides.forEach((s, i) => {
+  let g = groups[groups.length - 1];
+  if (!g || g.name !== s.part) { g = { name: s.part, idx: [] }; groups.push(g); }
+  g.idx.push(i);
+});
+prog.innerHTML = groups.map(g => `<div class="grp"><span class="gl">${g.name}</span><div class="segs">${
+  g.idx.map(i => `<button class="seg" data-i="${i}" title="${slides[i].title}" aria-label="Slide ${i + 1}: ${slides[i].title}"></button>`).join('')
+}</div></div>`).join('');
+prog.addEventListener('click', ev => { const b = ev.target.closest('.seg'); if (b) { go(+b.dataset.i); if (ev.detail) b.blur(); } });
+
+function ui() {
+  if (cur < 0) return;
+  const s = slides[cur];
+  $('#slideNo').textContent = `Slide ${cur + 1} of ${slides.length}`;
+  $('#stepNo').textContent = s.max ? `${s.unit} ${s.k} of ${s.max}` : '';
+  $('#prev').disabled = cur === 0 && s.k === 0;
+  const more = s.k < s.max;
+  $('#next').textContent = more ? 'Next' : 'Next slide';
+  $('#next').disabled = !more && cur === slides.length - 1;
+  $$('.seg', prog).forEach((b, i) => {
+    b.classList.toggle('cur', i === cur);
+    b.classList.toggle('seen', slides[i].visited && i !== cur);
+    if (i === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+}
+function go(i) {
+  if (i < 0 || i >= slides.length || i === cur) return;
+  const back = i < cur;
+  if (cur >= 0) slides[cur].el.classList.remove('cur');
+  cur = i;
+  const s = slides[cur];
+  s.el.classList.add('cur');
+  if (back && !s.visited) quiet(() => s.end());
+  s.visited = true;
+  s.el.scrollTop = 0;
+  ui();
+  try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) { /* not allowed for file:// in some browsers */ }
+}
+function next() { if (slides[cur].next()) ui(); else go(cur + 1); }
+function prev() { if (slides[cur].prev()) ui(); else go(cur - 1); }
+function resetSlide() { quiet(() => slides[cur].reset()); slides[cur].el.scrollTop = 0; ui(); }
+
+// Text size
+let scale = 1;
+try { scale = parseFloat(localStorage.getItem('rqc-scale')) || 1; } catch (e) { /* no storage */ }
+function setScale(v) {
+  scale = Math.min(1.8, Math.max(.7, Math.round(v * 10) / 10));
+  document.documentElement.style.setProperty('--scale', scale);
+  try { localStorage.setItem('rqc-scale', scale); } catch (e) { /* no storage */ }
+}
+setScale(scale);
+
+// Full screen
+function fullscreen() {
+  const d = document, r = d.documentElement;
+  try {
+    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else { const p = (r.requestFullscreen || r.webkitRequestFullscreen).call(r); if (p && p.catch) p.catch(() => {}); }
+  } catch (e) { /* full screen not available */ }
+}
+
+// Controls
+const bind = (id, fn) => $(id).addEventListener('click', ev => { fn(); if (ev.detail) ev.currentTarget.blur(); });
+bind('#next', next);
+bind('#prev', prev);
+bind('#reset', resetSlide);
+bind('#smaller', () => setScale(scale - .1));
+bind('#bigger', () => setScale(scale + .1));
+bind('#fs', fullscreen);
+
+document.addEventListener('keydown', ev => {
+  if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const t = ev.target, onBtn = t.tagName === 'BUTTON' || (t.getAttribute && t.getAttribute('role') === 'button');
+  switch (ev.key) {
+    case 'ArrowRight': case 'PageDown': case 'ArrowDown': ev.preventDefault(); next(); break;
+    case 'ArrowLeft': case 'PageUp': case 'ArrowUp': ev.preventDefault(); prev(); break;
+    case ' ': if (onBtn) return; ev.preventDefault(); next(); break;
+    case 'Home': ev.preventDefault(); go(0); break;
+    case 'End': ev.preventDefault(); go(slides.length - 1); break;
+    case 'f': case 'F': fullscreen(); break;
+    case 'r': case 'R': resetSlide(); break;
+    case '+': case '=': setScale(scale + .1); break;
+    case '-': setScale(scale - .1); break;
+  }
+});
+
+// Start (#5 opens slide 5, #5.3 opens slide 5 at step 3)
+const m = /^#(\d+)(?:\.(\d+))?$/.exec(location.hash);
+const start = m ? Math.min(slides.length, Math.max(1, +m[1])) - 1 : 0;
+go(start);
+if (m && m[2]) { quiet(() => slides[start].jump(+m[2])); ui(); }
+})();
+</script>
+</body>
+</html>
